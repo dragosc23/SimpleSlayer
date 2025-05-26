@@ -1,18 +1,21 @@
 import pygame
-from src.items import Weapon, RARITY_COMMON, RARITY_UNCOMMON, RARITY_RARE # Import rarities
-from src.consumables import HealthPotion
+from src.game_objects.item_definitions import Weapon, HealthPotion
+from src.utils.constants import RARITY_COMMON, RARITY_UNCOMMON, RARITY_RARE
+from src.core.asset_loader import load_image # Added import
 import random
 
 class Enemy:
     def __init__(self, x, y, width=32, height=48, health=50, xp_value=25):
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
+        self.image = load_image("enemies/generic_enemy.png", use_alpha=True) # Added
+        self.rect = self.image.get_rect(topleft=(self.x, self.y)) # Added
+        self.width = self.rect.width # Modified
+        self.height = self.rect.height # Modified
         self.health = health
         self.max_health = health
-        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        self.color = (0, 0, 255)  # Blue color for the enemy
+        # self.rect = pygame.Rect(self.x, self.y, self.width, self.height) # Replaced by image.get_rect
+        self.color = (0, 0, 255)  # Blue color for the enemy, kept for placeholder or debug
         self.loot_table = [
             (Weapon, "Iron Sword", 5),
             (Weapon, "Steel Axe", 7),
@@ -24,11 +27,11 @@ class Enemy:
 
     def update(self):
         # Future: Add enemy AI, movement, etc.
-        # Update rect for drawing and collision
-        self.rect.topleft = (self.x, self.y)
+        # If x or y were to change, we'd update self.rect here:
+        self.rect.topleft = (self.x, self.y) # Ensure rect follows x,y if they change
 
     def draw(self, screen):
-        pygame.draw.rect(screen, self.color, self.rect)
+        screen.blit(self.image, self.rect) # Modified
 
     def take_damage(self, amount):
         self.health -= amount

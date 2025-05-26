@@ -1,13 +1,14 @@
 import pygame
-from src.enemies import Enemy # Added import
+from src.game_objects.enemy import Enemy # Modified import
+from src.utils.constants import SCREEN_WIDTH, ENEMY_DEFAULT_HEALTH, ENEMY_DEFAULT_XP # Added import
 
 class Level:
     def __init__(self, level_name):
         print(f"Level {level_name} loaded")
         self.platforms = []
-        # Basic ground platform (assuming screen width 800, enemy height ~48)
-        # Enemy y should be around 550 - 48 = 502 for ground
-        self.platforms.append(pygame.Rect(0, 550, 800, 50))
+        # Basic ground platform
+        # Using SCREEN_HEIGHT - 50 for Y and 50 for height could be options for constants too
+        self.platforms.append(pygame.Rect(0, 550, SCREEN_WIDTH, 50)) # Modified
         
         self.wave_number = 0
         # Each tuple: (enemy_type_placeholder, x, y, health_multiplier)
@@ -26,10 +27,8 @@ class Level:
             current_wave_data = self.enemy_waves[self.wave_number]
             print(f"Spawning wave {self.wave_number + 1}") # User-friendly wave number
             for enemy_type, x, y, health_mult in current_wave_data:
-                # Base health for an enemy, e.g., 50
-                base_health = 50
-                base_xp = 20 # Base XP for an enemy
-                game_enemies_list.append(Enemy(x=x, y=y, health=int(base_health * health_mult), xp_value=int(base_xp * health_mult)))
+                # Using constants for base health and XP
+                game_enemies_list.append(Enemy(x=x, y=y, health=int(ENEMY_DEFAULT_HEALTH * health_mult), xp_value=int(ENEMY_DEFAULT_XP * health_mult))) # Modified
             self.wave_number += 1
             return True # Wave spawned
         else:
@@ -41,4 +40,6 @@ class Level:
 
     def draw(self, screen):
         for platform in self.platforms:
+            # Color (100,100,100) is DARK_GRAY from constants.py
+            # For now, keeping it as is, but it's a candidate for constants.
             pygame.draw.rect(screen, (100, 100, 100), platform)

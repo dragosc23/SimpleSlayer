@@ -1,11 +1,12 @@
 import pygame
 import sys
-from src.game import Game
+from src.managers.game_manager import Game # Modified import
+from src.utils.constants import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
 
 class SimpleSlayer:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((800, 600))
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT)) # Modified
         pygame.display.set_caption("SimpleSlayer")
         self.clock = pygame.time.Clock()
         self.game = Game(self.screen)
@@ -18,11 +19,12 @@ class SimpleSlayer:
                     sys.exit()
                 self.game.handle_event(event)
 
-            self.game.update()
+            dt = self.clock.get_time() / 1000.0 # Calculate dt in seconds
+            self.game.update(dt) # Pass dt
             self.game.draw()
             
             pygame.display.flip()
-            self.clock.tick(60)
+            self.clock.tick(FPS)
 
 if __name__ == "__main__":
     game = SimpleSlayer()

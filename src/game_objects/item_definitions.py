@@ -1,13 +1,26 @@
-# src/consumables.py
-from src.items import RARITY_COMMON, RARITY_UNCOMMON, RARITY_RARE, RARITY_MULTIPLIERS # Added import
+# src/game_objects/item_definitions.py
+from src.utils.constants import RARITY_COMMON, RARITY_UNCOMMON, RARITY_RARE, RARITY_MULTIPLIERS
+
+class Weapon:
+    def __init__(self, name, base_attack_bonus, rarity=RARITY_COMMON, item_type="Weapon"):
+        self.name = name
+        self.rarity = rarity
+        self.item_type = item_type
+
+        self.base_attack_bonus = base_attack_bonus
+        multiplier = RARITY_MULTIPLIERS.get(rarity, 1.0) # Uses imported RARITY_MULTIPLIERS
+        self.attack_bonus = int(round(base_attack_bonus * multiplier))
+
+    def __str__(self):
+        return f"[{self.rarity}] {self.name} (+{self.attack_bonus} Atk)"
 
 class Consumable:
-    def __init__(self, name, item_type="Consumable"): # Rarity could be added here too if needed for general consumables
+    def __init__(self, name, item_type="Consumable"):
         self.name = name
         self.item_type = item_type
 
     def __str__(self):
-        return self.name # Base consumables might not show rarity unless specified
+        return self.name
 
     def use(self, player):
         """ Base use method, to be overridden by specific consumables. """
@@ -15,16 +28,16 @@ class Consumable:
         pass
 
 class HealthPotion(Consumable):
-    def __init__(self, name, base_heal_amount, rarity=RARITY_COMMON): # Modified
+    def __init__(self, name, base_heal_amount, rarity=RARITY_COMMON):
         super().__init__(name, item_type="HealthPotion")
-        self.rarity = rarity # Added
+        self.rarity = rarity
 
-        self.base_heal_amount = base_heal_amount # Added
-        multiplier = RARITY_MULTIPLIERS.get(rarity, 1.0)
-        self.heal_amount = int(round(base_heal_amount * multiplier)) # Modified
+        self.base_heal_amount = base_heal_amount
+        multiplier = RARITY_MULTIPLIERS.get(rarity, 1.0) # Uses imported RARITY_MULTIPLIERS
+        self.heal_amount = int(round(base_heal_amount * multiplier))
 
     def __str__(self):
-        return f"[{self.rarity}] {self.name}" # Modified
+        return f"[{self.rarity}] {self.name}"
 
     def use(self, player):
         """ Heals the player. """

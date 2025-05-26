@@ -1,16 +1,15 @@
-# src/inventory.py
-from src.items import Weapon
-from src.consumables import HealthPotion, Consumable # Added imports
+# src/game_objects/components/inventory_component.py
+from src.game_objects.item_definitions import Weapon, HealthPotion, Consumable # Updated imports
 
 class Inventory:
     def __init__(self, capacity=10):
         self.items = []
         self.capacity = capacity
         self.item_type_map = {
-            "Weapon": Weapon,
-            "HealthPotion": HealthPotion,
-            "Consumable": Consumable
-        } # Updated
+            "Weapon": Weapon, # Uncommented
+            "HealthPotion": HealthPotion, # Uncommented
+            "Consumable": Consumable # Uncommented
+        }
 
     def add_item(self, item):
         if len(self.items) < self.capacity:

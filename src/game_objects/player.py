@@ -1,16 +1,18 @@
 import pygame
-from src.items import Weapon, RARITY_COMMON # Modified import
-from src.experience import get_xp_for_level
-from src.inventory import Inventory
-from src.consumables import HealthPotion
+from src.game_objects.item_definitions import Weapon, HealthPotion
+from src.systems.experience_system import get_xp_for_level
+from src.game_objects.components.inventory_component import Inventory
+from src.utils.constants import PLAYER_MOVE_SPEED, PLAYER_JUMP_VELOCITY, PLAYER_GRAVITY, PLAYER_INITIAL_X, PLAYER_INITIAL_Y, RARITY_COMMON
+from src.core.asset_loader import load_image # Added import
 
 class Player:
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.width = 32
-        self.height = 48
-        # self.vel_x = 0 # Removed as per instruction
+        self.image = load_image("player/player.png", use_alpha=True) # Added
+        self.rect = self.image.get_rect(topleft=(self.x, self.y)) # Added
+        self.width = self.rect.width # Modified
+        self.height = self.rect.height # Modified
         self.vel_y = 0
         self.jumping = False
         self.health = 100
@@ -18,27 +20,28 @@ class Player:
         self.base_attack_power = 10
         self.defense = 5
         self.equipped_weapon = None
-        self.equip_weapon(Weapon(name="Rusty Sword", base_attack_bonus=2, rarity=RARITY_COMMON)) # Modified
+        # Initial weapon is common, base_attack_bonus is its specific value
+        self.equip_weapon(Weapon(name="Rusty Sword", base_attack_bonus=2, rarity=RARITY_COMMON))
 
         self.level = 1
-        self.current_xp = 0 # Added
-        self.xp_to_next_level = get_xp_for_level(self.level) # Added
-        print(f"Player initialized: Level {self.level}, XP: {self.current_xp}/{self.xp_to_next_level}") # Added
+        self.current_xp = 0
+        self.xp_to_next_level = get_xp_for_level(self.level)
+        print(f"Player initialized: Level {self.level}, XP: {self.current_xp}/{self.xp_to_next_level}")
 
         self.is_attacking = False
-        self.attack_cooldown = 30 # For automatic attacks
-        self.attack_duration = 20  # How long the attack hitbox is active (frames)
+        self.attack_cooldown = 30 
+        self.attack_duration = 20
         self.attack_duration_timer = 0
         self.attack_rect = None
-        self.move_speed = 2
+        self.move_speed = PLAYER_MOVE_SPEED # Modified
         self.target_enemy = None
-        self.inventory = Inventory(capacity=10) # Added
+        self.inventory = Inventory(capacity=10)
 
     # Removed move_left and move_right
 
     def jump(self):
         if not self.jumping:
-            self.vel_y = -15
+            self.vel_y = PLAYER_JUMP_VELOCITY # Modified
             self.jumping = True
             
     def equip_weapon(self, weapon):
@@ -61,7 +64,8 @@ class Player:
         # Define attack hitbox relative to player
         # Assuming player faces right for now. This might need to adjust based on target_enemy position
         # For now, simple right-facing attack
-        self.attack_rect = pygame.Rect(self.x + self.width, self.y, self.width, self.height)
+        # Attack rect definition moved to attack() or update() based on enemy direction
+        self.attack_rect = None # Initialize as None
 
     def use_item_by_type(self, item_type_name):
         """ Uses the first available item of a given type from inventory. """
@@ -102,38 +106,42 @@ class Player:
         # Movement
         if self.target_enemy:
             if self.target_enemy.x > self.x + self.width + 5:  # Move right
-                self.x += self.move_speed
+                self.x += self.move_speed # PLAYER_MOVE_SPEED is already assigned to self.move_speed
             elif self.target_enemy.x + self.target_enemy.width < self.x - 5:  # Move left
-                self.x -= self.move_speed
+                self.x -= self.move_speed # PLAYER_MOVE_SPEED is already assigned to self.move_speed
             else:
                 pass # Stop horizontal movement
         else:
             pass # Player stays put
 
         # Apply gravity
-        self.vel_y += 0.8
+        self.vel_y += PLAYER_GRAVITY # Modified
         
         # Update position (Y-axis from gravity, X-axis from auto-movement)
-        # self.x += self.vel_x # vel_x removed
+        # self.x += self.vel_x # vel_x removed. self.x is modified by movement logic directly
         self.y += self.vel_y
+        self.rect.topleft = (self.x, self.y) # Update rect from x, y
 
-        if self.attack_rect:
-            # Keep attack_rect relative to player
-            # This needs to be smarter if player can face left/right
-            # For now, always attack to the right for simplicity
-            self.attack_rect.x = self.x + self.width 
-            self.attack_rect.y = self.y
+        # Attack rect update moved to where attack is initiated / direction is known
+        # if self.attack_rect:
+        #     # Keep attack_rect relative to player
+        #     # This needs to be smarter if player can face left/right
+        #     # For now, always attack to the right for simplicity
+        #     self.attack_rect.x = self.x + self.width 
+        #     self.attack_rect.y = self.y
         
-        player_rect = pygame.Rect(self.x, self.y, self.width, self.height)
+        # player_rect = self.rect # No need to create player_rect, use self.rect directly
 
         for platform_rect in platforms:
-            if player_rect.colliderect(platform_rect):
+            if self.rect.colliderect(platform_rect): # Modified
                 if self.vel_y > 0:  # Player is moving down
-                    self.y = platform_rect.top - self.height
+                    self.rect.bottom = platform_rect.top # Adjust rect position
+                    self.y = self.rect.y # Update y from rect
                     self.vel_y = 0
                     self.jumping = False
                 elif self.vel_y < 0: # Player is moving up
-                    self.y = platform_rect.bottom
+                    self.rect.top = platform_rect.bottom # Adjust rect position
+                    self.y = self.rect.y # Update y from rect
                     self.vel_y = 0
                 # Basic horizontal collision (can be improved)
                 # Check X-axis collision separately
@@ -165,20 +173,18 @@ class Player:
             # Player is roughly at the enemy's x position or slightly past for attack_rect
             # This logic might need refinement based on attack_rect direction
             can_attack = False
-            if self.target_enemy.x > self.x: # Enemy is to the right
-                if dist_to_enemy < attack_range:
+            if self.target_enemy.rect.centerx > self.rect.centerx: # Enemy is to the right
+                if dist_to_enemy < attack_range: # Simplified range check
                     can_attack = True
-                    # Update attack_rect to be on the right
-                    self.attack_rect = pygame.Rect(self.x + self.width, self.y, self.width, self.height)
+                    self.attack_rect = pygame.Rect(self.rect.right, self.rect.top, self.width, self.height) # Use self.rect
             else: # Enemy is to the left
-                if dist_to_enemy < self.target_enemy.width + 10: # Attack from left
+                 if dist_to_enemy < attack_range: # Simplified range check
                     can_attack = True
-                    # Update attack_rect to be on the left
-                    self.attack_rect = pygame.Rect(self.x - self.width, self.y, self.width, self.height)
+                    self.attack_rect = pygame.Rect(self.rect.left - self.width, self.rect.top, self.width, self.height) # Use self.rect
 
 
             if can_attack:
-                self.attack()
+                self.attack() # attack() method now only sets flags, actual rect created above
                 self.attack_cooldown = 30 # Reset cooldown (e.g. 30 frames)
 
 
@@ -195,7 +201,6 @@ class Player:
             self.use_item_by_type("HealthPotion") # Try to use a potion
 
     def draw(self, screen):
-        pygame.draw.rect(screen, (255, 0, 0), 
-                        (self.x, self.y, self.width, self.height))
+        screen.blit(self.image, self.rect) # Modified
         if self.is_attacking and self.attack_rect:
             pygame.draw.rect(screen, (0, 255, 0), self.attack_rect) # Green for attack hitbox

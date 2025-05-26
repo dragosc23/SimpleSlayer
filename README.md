@@ -14,6 +14,11 @@ SimpleSlayer is an auto-battler RPG where the player character automatically fig
 *   **Basic Inventory System:** Player can now store a limited number of items (weapons, potions) in an inventory.
 *   **Health Potions & Consumables:** Player can collect Health Potions. Potions are automatically used if player's health drops below 30%. UI shows potion count.
 *   **Item Rarity System:** Items (weapons and potions) can now have different rarities (Common, Uncommon, Rare). Rarity affects item stats (attack bonus for weapons, heal amount for potions) through multipliers. Item names in the UI are color-coded by rarity.
+*   **Basic Image Asset Loading (`src/core/asset_loader.py`):** Implemented a system for loading images with caching and error handling (provides a visual placeholder if an image file is missing). Player character now uses this system to display an image (currently a placeholder).
+*   **Enemy Graphics (Placeholder via Asset Loader):** Enemies now use the image asset loading system, displaying a placeholder image.
+*   **Basic Game State Machine (`src/core/game_state_machine.py`):** Implemented a state machine to manage different game phases (e.g., Menu, Playing, Game Over). The main game loop now operates based on this state machine.
+*   **Functional Menu & Game Over States:** Menu state now has working "Play" and "Exit" buttons. Game Over state has a "Restart" button (returns to menu).
+*   **Basic Custom Event Manager (`src/core/event_manager.py`):** Implemented an event manager for custom game events (e.g., `EVENT_PLAYER_DIED`). Player death is now handled through this event system.
 
 ## How to Run
 

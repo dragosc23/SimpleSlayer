@@ -1,4 +1,4 @@
-# src/experience.py
+# src/systems/experience_system.py
 
 def get_xp_for_level(level):
     """Calculates XP needed to reach the next level from the current one."""
