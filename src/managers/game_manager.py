@@ -8,16 +8,19 @@ from src.game_objects.level import Level
 from src.game_objects.enemy import Enemy
 from src.ui.hud import draw_player_health, init_ui, draw_wave_info, draw_player_stats, draw_player_experience, draw_inventory_preview
 from src.game_objects.item_definitions import Weapon, HealthPotion
-from src.systems.experience_system import grant_experience, check_level_up
-from src.utils.constants import PLAYER_INITIAL_X, PLAYER_INITIAL_Y, BLACK, STATE_PLAYING, STATE_GAME_OVER, STATE_MENU, STATE_LEVEL_COMPLETE, EVENT_PLAYER_DIED, STATE_VICTORY, EVENT_ALL_WAVES_CLEARED # Modified import
-from src.core.game_state_machine import GameStateMachine, MenuState, PlayingState, GameOverState, VictoryState # Modified import
+from src.systems.experience_system import grant_experience, check_level_up, get_xp_for_level # Added get_xp_for_level
+from src.utils.constants import PLAYER_INITIAL_X, PLAYER_INITIAL_Y, BLACK, STATE_PLAYING, STATE_GAME_OVER, STATE_MENU, STATE_LEVEL_COMPLETE, EVENT_PLAYER_DIED, STATE_VICTORY, EVENT_ALL_WAVES_CLEARED
+from src.core.game_state_machine import GameStateMachine, MenuState, PlayingState, GameOverState, VictoryState
 from src.core.event_manager import EventManager
+from src.managers.save_manager import save_player_progress, load_player_progress # Added import
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
         self.event_manager = EventManager()
-        self.player = Player(PLAYER_INITIAL_X, PLAYER_INITIAL_Y)
+        self.player = Player(PLAYER_INITIAL_X, PLAYER_INITIAL_Y) # Player initialized with defaults
+        self.load_game_data() # Load progress, potentially overriding defaults
+        
         self.current_level = Level("eldoria") 
         self.enemies = []
         
@@ -29,14 +32,40 @@ class Game:
         menu_state = MenuState()
         playing_state = PlayingState(game_manager_ref=self)
         game_over_state = GameOverState()
-        victory_state = VictoryState() # Added
+        victory_state = VictoryState()
 
         self.state_machine.add_state(STATE_MENU, menu_state)
         self.state_machine.add_state(STATE_PLAYING, playing_state)
         self.state_machine.add_state(STATE_GAME_OVER, game_over_state)
-        self.state_machine.add_state(STATE_VICTORY, victory_state) # Added
+        self.state_machine.add_state(STATE_VICTORY, victory_state)
         
         self.state_machine.change_state(STATE_MENU)
+
+    def load_game_data(self):
+        print("Attempting to load player progress...")
+        loaded_data = load_player_progress() # Uses default filename
+        if loaded_data:
+            player_level = loaded_data.get('level', 1)
+            player_xp = loaded_data.get('xp', 0)
+            
+            self.player.level = player_level
+            self.player.current_xp = player_xp
+            self.player.xp_to_next_level = get_xp_for_level(self.player.level)
+            
+            initial_base_attack = 10 
+            initial_max_health = 100 
+            
+            level_bonus_attack = (player_level - 1) * 2
+            level_bonus_health = (player_level - 1) * 10
+            
+            self.player.base_attack_power = initial_base_attack + level_bonus_attack
+            self.player.max_health = initial_max_health + level_bonus_health
+            self.player.health = self.player.max_health 
+
+            print(f"Player data loaded: Level {self.player.level}, XP {self.player.current_xp}/{self.player.xp_to_next_level}")
+            print(f"Player stats updated: Base Atk {self.player.base_attack_power}, Max Health {self.player.max_health}")
+        else:
+            print("No save data found or error loading. Starting fresh.")
 
     def subscribe_to_events(self):
         self.event_manager.subscribe(EVENT_PLAYER_DIED, self.handle_player_death_event)
@@ -63,6 +92,14 @@ class Game:
     def handle_all_waves_cleared_event(self, **data):
         print(f"GameManager: Received EVENT_ALL_WAVES_CLEARED. Changing to VICTORY state.")
         self.state_machine.change_state(STATE_VICTORY)
+        
+        print("Saving player progress after clearing all waves...")
+        player_data_to_save = {
+            'level': self.player.level,
+            'xp': self.player.current_xp
+            # Add other data to save in future, e.g., inventory, equipped items
+        }
+        save_player_progress(player_data_to_save)
 
     def handle_event_in_playing_state(self, events): 
         for event in events:

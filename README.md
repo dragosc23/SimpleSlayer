@@ -20,6 +20,8 @@ SimpleSlayer is an auto-battler RPG where the player character automatically fig
 *   **Functional Menu & Game Over States:** Menu state now has working "Play" and "Exit" buttons. Game Over state has a "Restart" button (returns to menu).
 *   **Basic Custom Event Manager (`src/core/event_manager.py`):** Implemented an event manager for custom game events (e.g., `EVENT_PLAYER_DIED`, `EVENT_ALL_WAVES_CLEARED`). Critical game events like player death and level completion are now handled through this system.
 *   **Victory State & Event (`src/core/game_state_machine.py`):** A `VictoryState` is implemented for when all enemy waves are cleared. This transition is handled via an `EVENT_ALL_WAVES_CLEARED` through the event manager.
+*   **Basic Input Manager (`src/managers/input_manager.py`):** A foundational input manager has been added, capable of tracking key/mouse states (including 'just pressed'). Currently, direct Pygame event handling is still used in states.
+*   **Save/Load Player Progress (`src/managers/save_manager.py`):** The game now saves the player's level and XP to a JSON file (`data/saves/savegame.json`) upon level completion (victory). This progress is loaded when the game starts.
 
 ## How to Run
 
