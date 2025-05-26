@@ -54,7 +54,8 @@ ENEMY_DEFAULT_XP = 20
 STATE_PLAYING = "playing"
 STATE_GAME_OVER = "game_over"
 STATE_MENU = "menu"
-STATE_LEVEL_COMPLETE = "level_complete"
+STATE_LEVEL_COMPLETE = "level_complete" # Internal state for game logic within PlayingState
+STATE_VICTORY = "victory_state" # Added
 
 # Custom Game Event Types
 EVENT_PLAYER_DIED = "player_died_event"

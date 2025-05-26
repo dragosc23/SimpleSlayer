@@ -9,16 +9,16 @@ from src.game_objects.enemy import Enemy
 from src.ui.hud import draw_player_health, init_ui, draw_wave_info, draw_player_stats, draw_player_experience, draw_inventory_preview
 from src.game_objects.item_definitions import Weapon, HealthPotion
 from src.systems.experience_system import grant_experience, check_level_up
-from src.utils.constants import PLAYER_INITIAL_X, PLAYER_INITIAL_Y, BLACK, STATE_PLAYING, STATE_GAME_OVER, STATE_MENU, STATE_LEVEL_COMPLETE, EVENT_PLAYER_DIED # Modified import
-from src.core.game_state_machine import GameStateMachine, MenuState, PlayingState, GameOverState
-from src.core.event_manager import EventManager # Added import
+from src.utils.constants import PLAYER_INITIAL_X, PLAYER_INITIAL_Y, BLACK, STATE_PLAYING, STATE_GAME_OVER, STATE_MENU, STATE_LEVEL_COMPLETE, EVENT_PLAYER_DIED, STATE_VICTORY, EVENT_ALL_WAVES_CLEARED # Modified import
+from src.core.game_state_machine import GameStateMachine, MenuState, PlayingState, GameOverState, VictoryState # Modified import
+from src.core.event_manager import EventManager
 
 class Game:
     def __init__(self, screen):
         self.screen = screen
-        self.event_manager = EventManager() # Added
+        self.event_manager = EventManager()
         self.player = Player(PLAYER_INITIAL_X, PLAYER_INITIAL_Y)
-        self.current_level = Level("eldoria") # Example level name
+        self.current_level = Level("eldoria") 
         self.enemies = []
         
         init_ui()
@@ -29,17 +29,18 @@ class Game:
         menu_state = MenuState()
         playing_state = PlayingState(game_manager_ref=self)
         game_over_state = GameOverState()
+        victory_state = VictoryState() # Added
 
         self.state_machine.add_state(STATE_MENU, menu_state)
         self.state_machine.add_state(STATE_PLAYING, playing_state)
         self.state_machine.add_state(STATE_GAME_OVER, game_over_state)
+        self.state_machine.add_state(STATE_VICTORY, victory_state) # Added
         
         self.state_machine.change_state(STATE_MENU)
-        # self.subscribe_to_events() # Call moved to reset_game_for_playing
 
     def subscribe_to_events(self):
         self.event_manager.subscribe(EVENT_PLAYER_DIED, self.handle_player_death_event)
-        # Future: self.event_manager.subscribe(EVENT_ALL_WAVES_CLEARED, self.handle_all_waves_cleared_event)
+        self.event_manager.subscribe(EVENT_ALL_WAVES_CLEARED, self.handle_all_waves_cleared_event) # Added
 
     def reset_game_for_playing(self):
         """ Resets player, level, enemies, and game_state for a new game or replay."""
@@ -58,6 +59,10 @@ class Game:
         self.state_machine.change_state(STATE_GAME_OVER)
         # else:
         #     print("PLAYER_DIED_EVENT received but not in PLAYING state. Ignored state change.")
+
+    def handle_all_waves_cleared_event(self, **data):
+        print(f"GameManager: Received EVENT_ALL_WAVES_CLEARED. Changing to VICTORY state.")
+        self.state_machine.change_state(STATE_VICTORY)
 
     def handle_event_in_playing_state(self, events): 
         for event in events:

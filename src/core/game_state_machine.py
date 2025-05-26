@@ -1,6 +1,6 @@
 # src/core/game_state_machine.py
 import pygame
-from src.utils.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT, EVENT_PLAYER_DIED # Modified import
+from src.utils.constants import WHITE, BLACK, SCREEN_WIDTH, SCREEN_HEIGHT, EVENT_PLAYER_DIED, STATE_PLAYING, STATE_MENU, STATE_GAME_OVER, EVENT_ALL_WAVES_CLEARED, STATE_LEVEL_COMPLETE # Modified import
 
 class GameState:
     """ Base class for individual game states. """
@@ -114,13 +114,13 @@ class MenuState(GameState):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Left mouse button
                     if self.play_button_rect.collidepoint(event.pos):
-                        game_state_machine.change_state("PLAYING") # Example transition
-                    elif self.exit_button_rect.collidepoint(event.pos): # Added Exit button check
+                        game_state_machine.change_state(STATE_PLAYING) # Used constant
+                    elif self.exit_button_rect.collidepoint(event.pos): 
                         print("Exit button clicked. Posting QUIT event.")
                         pygame.event.post(pygame.event.Event(pygame.QUIT))
             if event.type == pygame.KEYDOWN: # For quick testing
                 if event.key == pygame.K_p:
-                    game_state_machine.change_state("PLAYING")
+                    game_state_machine.change_state(STATE_PLAYING) # Used constant
 
 
 class PlayingState(GameState): # This will eventually hold the main game logic
@@ -154,8 +154,12 @@ class PlayingState(GameState): # This will eventually hold the main game logic
             # No direct state change here anymore for this condition.
             return # Return early to prevent further updates in this state if player is dead
             
-        if self.game_manager.game_state == "level_complete": # Check internal game_state string
-            game_state_machine.change_state("MENU") # Or a "LEVEL_SELECT" or "VICTORY" state
+        if self.game_manager.game_state == STATE_LEVEL_COMPLETE: # This state is set in game_manager.update_in_playing_state
+            print("PlayingState: All waves cleared. Posting EVENT_ALL_WAVES_CLEARED.")
+            self.game_manager.event_manager.post(EVENT_ALL_WAVES_CLEARED)
+            # Remove direct state change: game_state_machine.change_state(STATE_MENU)
+            # The GameManager will now handle the state change via its subscribed event handler.
+            return # Important to exit update after posting this event
 
 
     def draw(self, screen):
@@ -197,8 +201,61 @@ class GameOverState(GameState):
                 if event.button == 1: # Left mouse button
                     if self.restart_button_rect.collidepoint(event.pos):
                         print("Restart button clicked. Changing state to MENU.")
-                        game_state_machine.change_state("MENU") # Go to Menu to restart
+                        game_state_machine.change_state(STATE_MENU) # Used constant
             elif event.type == pygame.KEYDOWN: # For quick testing
                 if event.key == pygame.K_r:
                     print("R key pressed. Changing state to MENU.")
-                    game_state_machine.change_state("MENU")
+                    game_state_machine.change_state(STATE_MENU) # Used constant
+
+class VictoryState(GameState):
+    def __init__(self):
+        super().__init__()
+        self.victory_font = pygame.font.SysFont('arial', 72) # Large font for "Victory!"
+        self.victory_text_surface = self.victory_font.render("Level Cleared!", True, (0, 200, 0)) # Green text
+        self.victory_text_rect = self.victory_text_surface.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100))
+
+        self.button_font = pygame.font.SysFont('arial', 30)
+        self.main_menu_button_rect = pygame.Rect(SCREEN_WIDTH/2 - 150, SCREEN_HEIGHT/2 + 50, 300, 50)
+        # Optional: Next Level button placeholder
+        # self.next_level_button_rect = pygame.Rect(SCREEN_WIDTH/2 - 150, SCREEN_HEIGHT/2 + 120, 300, 50)
+
+    def draw(self, screen):
+        screen.fill(BLACK) # Or a specific victory background color
+        screen.blit(self.victory_text_surface, self.victory_text_rect)
+
+        # Draw Main Menu button
+        pygame.draw.rect(screen, (0, 100, 150), self.main_menu_button_rect) # Blueish button
+        menu_text_surface = self.button_font.render("Main Menu", True, WHITE)
+        menu_text_rect = menu_text_surface.get_rect(center=self.main_menu_button_rect.center)
+        screen.blit(menu_text_surface, menu_text_rect)
+
+        # Optional: Draw Next Level button placeholder
+        # pygame.draw.rect(screen, (50, 50, 50), self.next_level_button_rect) # Disabled look
+        # next_level_text_surface = self.button_font.render("Next Level (Coming Soon!)", True, (150,150,150))
+        # next_level_text_rect = next_level_text_surface.get_rect(center=self.next_level_button_rect.center)
+        # screen.blit(next_level_text_surface, next_level_text_rect)
+
+    def handle_events(self, events, game_state_machine):
+        super().handle_events(events, game_state_machine) # For ESC key etc.
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # Left mouse button
+                    if self.main_menu_button_rect.collidepoint(event.pos):
+                        print("VictoryState: Main Menu button clicked.")
+                        game_state_machine.change_state(STATE_MENU) 
+                    # Optional: Handle Next Level button click
+                    # if self.next_level_button_rect.collidepoint(event.pos):
+                    #     print("VictoryState: Next Level button clicked (Not implemented).")
+                    #     # game_state_machine.change_state(STATE_PLAYING, level="next_level_data") # Example
+            elif event.type == pygame.KEYDOWN: # For quick testing
+                if event.key == pygame.K_m:
+                     print("VictoryState: M key pressed. Changing to MENU.")
+                     game_state_machine.change_state(STATE_MENU)
+
+
+    def enter(self, **kwargs):
+        super().enter(**kwargs)
+        # Any specific logic when victory state is entered, e.g., play victory music
+        print("Victory achieved!")
+
+    # update method can be pass or inherited from GameState if no specific update logic
