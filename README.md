@@ -35,4 +35,25 @@ The game is largely automated. The player character will move and fight on its o
 *   More diverse enemy types and abilities.
 *   Advanced AI for player and enemies.
 *   Persistent player save/load.
+
+## Project Structure
+
+The project is organized into the following main directories:
+
+*   **`assets/`**: Contains all game assets like images, sounds, and fonts.
+    *   `images/`: Sprites, backgrounds, UI elements.
+    *   `sounds/`: Sound effects and music.
+    *   `fonts/`: Custom game fonts.
+*   **`data/`**: Stores game data files, such as level definitions, item configurations, and quest information.
+*   **`src/`**: Contains the Python source code for the game, further divided into:
+    *   `core/`: Core engine components (asset loading, state management, event handling).
+    *   `game_objects/`: Classes for player, enemies, NPCs, projectiles, etc.
+    *   `managers/`: High-level managers for game flow, levels, quests, saving/loading, audio, input.
+    *   `systems/`: Specific game systems like AI, physics, animation.
+    *   `ui/`: UI elements, screens, and HUD components. (Note: Existing `ui.py` will be refactored into this module).
+    *   `utils/`: Utility functions, constants, logging, settings.
+    *   *(Existing files like `player.py`, `game.py`, etc., are currently in `src/` and will be refactored into the new structure over time).*
+*   **`tests/`**: Houses unit and integration tests.
+*   **`docs/`**: For design documents, concept art, and other documentation.
+*   **`main.py`**: The main entry point to run the game.
 ```
